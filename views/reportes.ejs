@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REPORTES - CLUB RACING LTC</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --light: #f4f7f6;
+            --dark: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #dee2e6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 20px;
+        }
+
+        .btn-volver {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Formulario de Filtros */
+        .filter-section {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        select {
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            outline: none;
+        }
+
+        .btn-filtrar {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            height: 42px;
+        }
+
+        /* Tarjeta de Total */
+        .total-card {
+            background: white;
+            border-left: 5px solid var(--success);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-card span { font-size: 0.9rem; color: #666; font-weight: bold; }
+        .total-card h2 { margin: 0; color: var(--success); font-size: 2rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        tr:hover { background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="header-container">
+        <a href="/" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver al Inicio</a>
+        <h1 style="margin:0; font-size: 1.5rem;">RECAUDACIÓN POR PERÍODO</h1>
+        <div style="width: 120px;"></div> </header>
+
+    <form action="/reportes" method="GET" class="filter-section">
+        <div class="filter-group">
+            <label>MES</label>
+            <select name="mes">
+                <% 
+                const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                meses.forEach((m, i) => { 
+                    let valor = (i + 1).toString().padStart(2, '0');
+                %>
+                    <option value="<%= valor %>" <%= mesSeleccionado == valor ? 'selected' : '' %>><%= m %></option>
+                <% }) %>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>AÑO</label>
+            <select name="anio">
+                <% for(let a = 2024; a <= 2028; a++) { %>
+                    <option value="<%= a %>" <%= anioSeleccionado == a ? 'selected' : '' %>><%= a %></option>
+                <% } %>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-filtrar">
+            <i class="fas fa-filter"></i> ACTUALIZAR REPORTE
+        </button>
+    </form>
+
+    <div class="total-card">
+        <div>
+            <span>INGRESOS TOTALES DEL PERÍODO</span>
+            <h2>$<%= total.toLocaleString('es-AR') %></h2>
+        </div>
+        <i class="fas fa-money-bill-wave" style="font-size: 3rem; color: #eee;"></i>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha de Pago</th>
+                    <th>Socio</th>
+                    <th>Categoría</th>
+                    <th>Método</th>
+                    <th>Monto Abonado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (ingresos.length > 0) { %>
+                    <% ingresos.forEach(p => { %>
+                        <tr>
+                            <td><%= new Date(p.fecha_pago).toLocaleDateString('es-AR') %></td>
+                            <td><strong><%= p.apellido %>, <%= p.nombre %></strong></td>
+                            <td><span style="color: #666;"><%= p.nombre_categoria %></span></td>
+                            <td><i class="fas fa-credit-card"></i> <%= p.metodo_pago %></td>
+                            <td style="font-weight: bold; color: var(--success);">$<%= p.monto_abonado.toLocaleString('es-AR') %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                            No se registraron ingresos en este período.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
