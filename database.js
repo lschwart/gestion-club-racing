@@ -1,31 +1,43 @@
 const { Pool } = require('pg');
 
-// Usamos la URL que pusiste en Railway
+// Railway inyectará automáticamente la DATABASE_URL que configuraste
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Esto es clave para que Railway conecte a Supabase
+    rejectUnauthorized: false
   }
 });
 
-// Adaptador para que tus controladores sigan funcionando sin cambios locos
 module.exports = {
+  // Para consultas generales
   query: (text, params) => pool.query(text, params),
+
+  // EMULACIÓN DE SQLITE PARA TUS CONTROLADORES:
   
-  // Estas funciones emulan el comportamiento de sqlite3 para que no se rompa el bkp
+  // Para SELECT de muchos registros (ej: lista de socios)
   all: (text, params, callback) => {
-    pool.query(text, params)
-      .then(res => callback(null, res.rows))
-      .catch(err => callback(err));
+    pool.query(text, params, (err, res) => {
+      if (err) return callback(err);
+      callback(null, res.rows);
+    });
   },
+
+  // Para SELECT de un solo registro (ej: buscar un socio por ID)
   get: (text, params, callback) => {
-    pool.query(text, params)
-      .then(res => callback(null, res.rows[0]))
-      .catch(err => callback(err));
+    pool.query(text, params, (err, res) => {
+      if (err) return callback(err);
+      callback(null, res.rows[0]);
+    });
   },
+
+  // Para INSERT, UPDATE, DELETE
   run: (text, params, callback) => {
-    pool.query(text, params)
-      .then(res => { if(callback) callback(null, res); })
-      .catch(err => { if(callback) callback(err); });
+    // Convertimos los "?" de SQLite a "$1, $2" de PostgreSQL automáticamente
+    let i = 1;
+    const pgSql = text.replace(/\?/g, () => `$${i++}`);
+    
+    pool.query(pgSql, params, (err, res) => {
+      if (callback) callback(err, res);
+    });
   }
 };
