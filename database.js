@@ -2,63 +2,62 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-// 1. Definir ruta (Usa el volumen de Railway si existe)
-const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
+// 1. Ruta inteligente: Volumen en Railway o carpeta local
+const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'database');
 
+// 2. Crear carpeta si no existe
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// IMPORTANTE: Asegurate que este nombre coincida con el que ves en el log
-const dbPath = path.join(dataDir, 'database.db'); 
+// Usamos el nombre 'socios.db' que tenías en tu setup original
+const dbPath = path.join(dataDir, 'socios.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error("Error al abrir BD:", err.message);
-    else console.log("✅ Conectado a:", dbPath);
+    if (err) console.error("❌ Error al abrir BD:", err.message);
+    else console.log("✅ Base de datos conectada en:", dbPath);
 });
 
-// 2. FORZAR LA CREACIÓN DE TABLAS
+// 3. Inicialización basada exactamente en tu setup.js
 db.serialize(() => {
-    console.log("🛠️ Verificando tablas...");
-    
-    // Tabla de Socios
+    console.log("🛠️ Verificando estructura del Club San Cristóbal...");
+
+    // Tabla Categorias
+    db.run(`CREATE TABLE IF NOT EXISTS categorias (
+        id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre_categoria TEXT,
+        costo_mensual DECIMAL(10,2)
+    )`);
+
+    // Tabla Socios
     db.run(`CREATE TABLE IF NOT EXISTS socios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_socio INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT,
         apellido TEXT,
-        dni TEXT,
-        fecha_nacimiento TEXT,
+        dni TEXT UNIQUE,
         id_categoria INTEGER,
-        estado TEXT DEFAULT 'Activo'
-    )`, (err) => { if (err) console.log("Error creando socios:", err); });
+        FOREIGN KEY(id_categoria) REFERENCES categorias(id_categoria)
+    )`);
 
-    // Tabla de Categorías (Fundamental para que no falle el listar)
-    db.run(`CREATE TABLE IF NOT EXISTS categorias (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        cuota REAL
-    )`, (err) => {
-        if (!err) {
-            // Insertamos categorías básicas si la tabla está recién creada
-            db.get("SELECT COUNT(*) as count FROM categorias", (err, row) => {
-                if (row && row.count === 0) {
-                    db.run("INSERT INTO categorias (nombre, cuota) VALUES ('Activo', 1000), ('Cadete', 500)");
-                }
-            });
+    // Tabla Cuotas
+    db.run(`CREATE TABLE IF NOT EXISTS cuotas (
+        id_cuota INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_socio INTEGER,
+        mes INTEGER,
+        anio INTEGER,
+        costo_mensual REAL,
+        estado_pago TEXT DEFAULT 'PENDIENTE',
+        FOREIGN KEY(id_socio) REFERENCES socios(id_socio)
+    )`);
+
+    // --- DATOS INICIALES ---
+    // Insertamos la categoría inicial solo si la tabla está vacía para no duplicar
+    db.get("SELECT COUNT(*) as count FROM categorias", (err, row) => {
+        if (row && row.count === 0) {
+            db.run(`INSERT INTO categorias (nombre_categoria, costo_mensual) VALUES ('Estándar', 1500.00)`);
+            console.log("✅ Categoría 'Estándar' creada.");
         }
     });
-
-    // Tabla de Pagos
-    db.run(`CREATE TABLE IF NOT EXISTS pagos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_socio INTEGER,
-        mes TEXT,
-        anio TEXT,
-        monto_abonado REAL,
-        fecha_pago TEXT,
-        metodo_pago TEXT,
-        FOREIGN KEY(id_socio) REFERENCES socios(id)
-    )`);
 });
 
 module.exports = db;
