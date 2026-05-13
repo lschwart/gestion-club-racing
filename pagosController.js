@@ -1,9 +1,4 @@
-const path = require('path');
-// Esta línea detecta si estamos en Railway o en tu PC
-const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, '..', 'data');
-const dbPath = path.join(dataDir, 'database.db');
-
-const db = new sqlite3.Database(dbPath);
+const db = require('../database'); // Esto usa la conexión centralizada
 
 // Esta es la función que usará tu formulario de la ficha
 const registrarPago = (datos, callback) => {
