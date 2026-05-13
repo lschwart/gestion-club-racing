@@ -1,5 +1,10 @@
 const fs = require('fs'); // Módulo para manejar archivos
-const db = require('./database');
+const path = require('path');
+// Esta línea detecta si estamos en Railway o en tu PC
+const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, '..', 'data');
+const dbPath = path.join(dataDir, 'database.db');
+
+const db = require('../database');
 
 // 1. Listar todos los socios
 const listarConResumen = (callback) => {
@@ -179,7 +184,7 @@ const crearSocio = (datos, callback) => {
             db.run(sqlCuota, [idSocioNuevo, mesActual, anioActual, categoria.costo_mensual], (err) => {
                 if (err) return callback(err);
                 
-                console.log(`✅ Socio creado: ID ${idSocioNuevo} - Cuota: ${mesActual}/${anioActual}`);
+                //console.log(`✅ Socio creado: ID ${idSocioNuevo} - Cuota: ${mesActual}/${anioActual}`);
                 callback(null, idSocioNuevo);
             });
         });

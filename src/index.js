@@ -1,5 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database/socios.db');
+const db = require('../database');
 
 // Función para registrar un socio y su cuota
 function registrarNuevoSocio(nombre, apellido, dni, idCat) {

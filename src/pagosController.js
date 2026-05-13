@@ -1,4 +1,4 @@
-const db = require('./database');
+const db = require('../database');
 
 // Esta es la función que usará tu formulario de la ficha
 const registrarPago = (datos, callback) => {
