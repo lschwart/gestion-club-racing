@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GESTION DE SOCIOS - CLUB RACING LTC</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --light: #f4f7f6;
+            --dark: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #dee2e6;
+            margin: 0;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Cabecera con Logo */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 20px;
+        }
+
+        .logo-club {
+            height: 90px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .header-container h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Sección Formulario */
+        .form-section {
+            background: var(--light);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+        }
+
+        .form-section h3 { margin-top: 0; color: var(--primary); }
+
+        /* Botones */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .btn-save { background: var(--success); color: white; }
+        .btn-save:hover { background: #1e8449; transform: translateY(-2px); }
+
+        /* Tabla */
+        .table-container {
+            max-width: 100%;
+            overflow-x: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            word-wrap: break-word;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* CORRECCIÓN DASHBOARD: Ahora ocupa todo el ancho */
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 15px; 
+            margin-bottom: 30px; 
+            width: 100%;
+        }
+
+        .stat-card-new { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: 1px solid #eee; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .stat-card-new span { font-size: 2rem; }
+        .stat-card-new h3 { margin: 0; font-size: 1.3rem; color: #333; }
+        .stat-card-new p { margin: 0; color: #666; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+
+        /* Estilos específicos de bordes para el Dashboard */
+        .border-socios { border-left: 5px solid #4a90e2; }
+        .border-recaudado { border-left: 5px solid #2ecc71; }
+        .border-deuda { border-left: 5px solid #e74c3c; }
+        .border-cumples { border-left: 5px solid #ff6b6b; }
+
+        /* Filtros y Buscador */
+        .btn-filtro {
+            border: 1px solid #dee2e6; padding: 6px 15px; border-radius: 50px;
+            font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.3s ease;
+            background-color: #f8f9fa; color: #6c757d;
+        }
+        .btn-todos.active { background-color: #e2e3e5; color: #383d41; border-color: #adb5bd; }
+        .btn-activo.active { background-color: #27ae60; color: white; }
+        .btn-inactivo.active { background-color: #eb5757; color: white; }
+
+        .btn-pill-white {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 50px;
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #333; /* Texto oscuro como los otros */
+        }
+
+        .btn-pill-white:hover {
+        background-color: #f8f9fa;
+        border-color: #bbb;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn-pill-white img {
+        display: block;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .badge-custom-activo {
+            background-color: #e9f7ef; color: #27ae60;
+            padding: 6px 14px; border-radius: 50px; font-weight: bold; font-size: 0.85rem;
+            display: inline-flex; align-items: center;
+        }
+        .dot-activo { height: 8px; width: 8px; background-color: #27ae60; border-radius: 50%; margin-right: 8px; }
+
+        .badge-custom-inactivo-rojo {
+            background-color: #fdeaea; color: #eb5757;
+            padding: 6px 14px; border-radius: 50px; font-weight: bold; font-size: 0.85rem;
+            display: inline-flex; align-items: center; border: 1px solid #fbcaca;
+        }
+        .dot-inactivo-rojo { height: 8px; width: 8px; background-color: #eb5757; border-radius: 50%; margin-right: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <header class="header-container">
+        <img src="/img/logo.png" alt="Logo Racing LTC" class="logo-club">
+        <h1>CLUB RACING LTC - GESTION DE SOCIOS</h1>
+    </header>
+
+    <section class="form-section">
+        <h3 style="margin-bottom: 20px;">➕ Alta de Nuevo Socio</h3>
+        <form action="/nuevo-socio" method="POST">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: flex-end;">
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">NOMBRE</label>
+                    <input type="text" name="nombre" placeholder="Ej: Juan" required>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">APELLIDO</label>
+                    <input type="text" name="apellido" placeholder="Ej: Pérez" required>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">DNI</label>
+                    <input type="text" name="dni" placeholder="Sin puntos" required>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">FECHA NAC.</label>
+                    <input type="date" name="fecha_nacimiento" required>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">CATEGORÍA</label>
+                    <select name="id_categoria" required style="padding: 11px; border: 2px solid #ddd; border-radius: 6px;">
+                        <option value="" disabled selected>Elegir...</option>
+                        <% if (locals.categorias) { %>
+                            <% categorias.forEach(cat => { %>
+                                <option value="<%= cat.id_categoria %>"><%= cat.nombre_categoria %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-save">
+                    <i class="fas fa-user-plus"></i> REGISTRAR
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <div class="dashboard-grid">
+        <div class="stat-card-new border-socios">
+            <span>👥</span>
+            <div>
+                <p>Socios</p>
+                <h3><%= stats.total_activos %></h3>
+            </div>
+        </div>
+
+        <div class="stat-card-new border-recaudado">
+            <span>💰</span>
+            <div>
+                <p>Recaudado</p>
+                <h3 style="color: #2ecc71;">$<%= stats.recaudado %></h3>
+            </div>
+        </div>
+
+        <div class="stat-card-new border-deuda">
+            <span>📉</span>
+            <div>
+                <p>Deuda</p>
+                <h3 style="color: #e74c3c;">$<%= stats.pendiente %></h3>
+            </div>
+        </div>
+
+        <div class="stat-card-new border-cumples">
+            <span>🎂</span>
+            <div>
+                <p>Cumples</p>
+                <h3 style="color: #ff6b6b;"><%= cumpleHoy %></h3>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <div style="position: relative; width: 300px; display: flex; align-items: center;">
+                <i class="fas fa-search" style="position: absolute; left: 12px; color: #444; font-size: 14px;"></i>
+                <input type="text" id="buscadorSocios" 
+                       style="padding: 10px 10px 10px 35px; border-radius: 50px; border: 1px solid #ccc; width: 100%; outline: none;"
+                       placeholder="Buscar por Apellido o DNI...">
+            </div>
+            <div class="button-group" style="display: flex; gap: 10px;">
+                    <a href="/reportes" class="btn-pill-white" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                        <img src="https://img.icons8.com/color/48/sales-performance.png" width="18"> 
+                        <span>Reporte Mensual</span>
+                    </a>
+                <button onclick="exportarExcel()" class="btn-pill-white">
+                    <img src="https://img.icons8.com/color/48/microsoft-excel-2019--v1.png" width="16"> 
+                    <span>Excel</span>
+                </button>
+                <button onclick="imprimirReporte()" class="btn-pill-white">
+                    <img src="https://img.icons8.com/color/48/pdf-2.png" width="16"> 
+                    <span>Imprimir / PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: #444; font-weight: bold; font-size: 12px;">VER:</span>
+            <button onclick="filtrarEstado('Todos')" class="btn-filtro btn-todos active">Todos</button>
+            <button onclick="filtrarEstado('Activo')" class="btn-filtro btn-activo">Activos</button>
+            <button onclick="filtrarEstado('Inactivo')" class="btn-filtro btn-inactivo">Inactivos</button>
+            <button onclick="filtrarDeuda()" class="btn-filtro" style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;">
+                ⚠️ Con Deuda
+            </button>
+            <button onclick="filtrarCumpleaños()" id="btnCumple" 
+                    style="padding: 8px 15px; border-radius: 50px; border: none; background: #ff6b6b; color: white; font-weight: bold; cursor: pointer;">
+                🎂 <span id="txtCumple">Cumpleañeros</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>Apellido y Nombre</th>
+                    <th>DNI</th>
+                    <th>Estado</th>
+                    <th>Categoría</th>
+                    <th style="display: none;">DEUDA</th>
+                    <th style="width: 120px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% socios.forEach(socio => { %>
+                    <tr data-estado="<%= socio.estado.toLowerCase().trim() %>">
+                        <td>#<%= socio.id_socio %></td>
+                        <td style="text-align: left;">
+                            <a href="/socio/<%= socio.id_socio %>" style="text-decoration: none; color: var(--secondary); font-weight: bold;">
+                                <%= socio.nombre %> <%= socio.apellido %> 🔍
+                            </a>
+                            <% if (socio.fecha_nacimiento) { 
+                                const birthDate = new Date(socio.fecha_nacimiento);
+                                const today = new Date();
+                                let age = today.getFullYear() - birthDate.getFullYear();
+                                const m = today.getMonth() - birthDate.getMonth();
+                                if (m < 0 || (m === 0 && today.getDate() < (birthDate.getDate() + 1))) { age--; }
+                                const esCumple = (today.getUTCDate() === birthDate.getUTCDate() && today.getUTCMonth() === birthDate.getUTCMonth());
+                            %>
+                                <span style="margin-left: 8px; font-size: 0.7rem; color: #666; background: #f0f0f0; padding: 2px 6px; border-radius: 10px;">
+                                    <%= age %> años
+                                </span>
+                                <% if (esCumple) { %>
+                                    <span title="¡Hoy es su cumple!" style="display:inline-block; animation: pulse 1s infinite;">🎂</span>
+                                <% } %>
+                            <% } %>
+                            <% if (socio.deuda_total > 0) { %>
+                                <i class="fas fa-exclamation-circle" style="color: var(--danger); margin-left: 5px;" title="Deuda pendiente"></i>
+                            <% } %>
+                        </td>
+                        <td><%= socio.dni %></td>
+                        <td>
+                            <span class="<%= socio.estado === 'Activo' ? 'badge-custom-activo' : 'badge-custom-inactivo-rojo' %>">
+                                <span class="<%= socio.estado === 'Activo' ? 'dot-activo' : 'dot-inactivo-rojo' %>"></span>
+                                <%= socio.estado %>
+                            </span>
+                        </td>
+                        <td><%= socio.nombre_categoria %></td>
+                        <td style="display: none;">$<%= (socio.deuda_total || 0) %></td>
+                        <td>
+                            <div style="display: flex; gap: 15px; justify-content: center;">
+                                <a href="/socio/<%= socio.id_socio %>" title="Ficha" style="color: #3498db;"><i class="fas fa-eye"></i></a>
+                                <% if (socio.estado === 'Activo') { %>
+                                    <a href="/baja-socio/<%= socio.id_socio %>" style="color: #e74c3c;" onclick="return confirm('¿Baja?')"><i class="fas fa-user-minus"></i></a>
+                                <% } else { %>
+                                    <a href="/alta-socio/<%= socio.id_socio %>" style="color: #27ae60;" onclick="return confirm('¿Reactivar?')"><i class="fas fa-user-plus"></i></a>
+                                <% } %>
+                            </div>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // --- LÓGICA DE FILTROS ---
+    function filtrarEstado(estado) {
+        const filtro = estado.toLowerCase().trim();
+        document.querySelectorAll("tbody tr").forEach(fila => {
+            const estadoFila = fila.getAttribute("data-estado");
+            fila.style.display = (filtro === 'todos' || estadoFila === filtro) ? "" : "none";
+        });
+        document.querySelectorAll('.btn-filtro').forEach(btn => btn.classList.remove('active'));
+        if(estado === 'Todos') document.querySelector('.btn-todos').classList.add('active');
+        if(estado === 'Activo') document.querySelector('.btn-activo').classList.add('active');
+        if(estado === 'Inactivo') document.querySelector('.btn-inactivo').classList.add('active');
+    }
+
+    function filtrarDeuda() {
+        document.querySelectorAll("tbody tr").forEach(fila => {
+            const deuda = parseFloat(fila.cells[5].innerText.replace(/[^0-9.-]+/g,"")) || 0;
+            fila.style.display = (deuda > 0) ? "" : "none";
+        });
+    }
+
+    document.getElementById('buscadorSocios').addEventListener('keyup', function() {
+        const busqueda = this.value.toLowerCase();
+        document.querySelectorAll("tbody tr").forEach(fila => {
+            const texto = fila.cells[1].textContent.toLowerCase() + fila.cells[2].textContent.toLowerCase();
+            fila.style.display = texto.includes(busqueda) ? "" : "none";
+        });
+    });
+
+    let filtrandoCumple = false;
+    function filtrarCumpleaños() {
+        filtrandoCumple = !filtrandoCumple;
+        document.querySelectorAll("tbody tr").forEach(fila => {
+            fila.style.display = filtrandoCumple ? (fila.innerHTML.includes("🎂") ? "" : "none") : "";
+        });
+        document.getElementById("btnCumple").style.background = filtrandoCumple ? "#555" : "#ff6b6b";
+    }
+
+    function imprimirReporte() {
+        const win = window.open('', '', 'height=700,width=900');
+        win.document.write('<html><head><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head><body>');
+        win.document.write('<h2 class="text-center my-4">LISTADO DE SOCIOS - CLUB RACING LTC</h2>');
+        win.document.write(document.querySelector('table').outerHTML);
+        win.document.write('<style>th:last-child, td:last-child { display:none; }</style></body></html>');
+        win.document.close();
+        setTimeout(() => { win.print(); win.close(); }, 500);
+    }
+
+    function exportarExcel() {
+        const ws = XLSX.utils.table_to_sheet(document.querySelector("table"));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Socios");
+        XLSX.writeFile(wb, "Reporte_Socios_Racing.xlsx");
+    }
+</script>
+</body>
+</html>
