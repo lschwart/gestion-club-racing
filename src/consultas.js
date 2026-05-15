@@ -1,39 +1,45 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database/socios.db');
+const db = require('./database'); // Cambiamos la conexión local por la de Supabase
 
 // Función para ver quiénes deben cuotas
 function listarDeudores() {
+    // CAMBIOS: 
+    // - ? no hay, pero ajustamos nombres de columnas
+    // - cat.costo_mensual lo sacamos de la tabla categorias
+    // - s.id_categoria es la unión
     const sql = `
         SELECT 
             s.nombre, 
             s.apellido, 
             c.mes, 
             c.anio, 
-            cat.costo_mensual as monto
+            c.monto
         FROM socios s
         JOIN cuotas c ON s.id_socio = c.id_socio
-        JOIN categorias cat ON s.id_categoria = cat.id_categoria
         WHERE c.estado_pago = 'PENDIENTE'
+        ORDER BY c.anio ASC, c.mes ASC, s.apellido ASC
     `;
 
+    // Usamos db.all que es el adaptador que configuramos en database.js
     db.all(sql, [], (err, filas) => {
         if (err) {
-            return console.error("Error al consultar:", err.message);
+            return console.error("❌ Error al consultar deudores en Supabase:", err.message);
         }
 
-        console.log("--- LISTA DE DEUDORES ---");
-        if (filas.length === 0) {
-            console.log("¡Increíble! Todos los socios están al día.");
+        console.log("\n--- 📋 LISTA DE DEUDORES (SAN CRISTÓBAL) ---");
+        
+        if (!filas || filas.length === 0) {
+            console.log("✅ ¡Increíble! Todos los socios están al día.");
         } else {
             filas.forEach((fila) => {
-                console.log(`${fila.nombre} ${fila.apellido} debe el mes ${fila.mes}/${fila.anio} ($${fila.monto})`);
+                // Formateamos un poco la salida para que sea legible en consola
+                const periodo = `${fila.mes.toString().padStart(2, '0')}/${fila.anio}`;
+                console.log(`• ${fila.apellido}, ${fila.nombre} - Periodo: ${periodo} - Monto: $${fila.monto}`);
             });
+            console.log(`\nTotal de cuotas pendientes: ${filas.length}`);
         }
-        console.log("-------------------------");
+        console.log("-------------------------------------------\n");
     });
 }
 
 // Ejecutar la consulta
 listarDeudores();
-
-// db.close();

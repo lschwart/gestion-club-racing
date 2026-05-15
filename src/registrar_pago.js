@@ -1,49 +1,60 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./database/socios.db');
+const db = require('./database'); // Importamos la conexión a Supabase
 
 function procesarPagoSocio(idSocio, mes, anio, metodoPago) {
-    db.serialize(() => {
-        // 1. Verificamos si la cuota existe y cuál es su estado actual
-        const sqlConsultar = `SELECT c.id_cuota, c.estado_pago, c.monto_original, s.nombre
-                              FROM cuotas c
-                              JOIN socios s ON c.id_socio = s.id_socio 
-                              WHERE c.id_socio = ? AND mes = ? AND anio = ?`;            
+    // 1. Verificamos si la cuota existe y cuál es su estado actual
+    // CAMBIO: monto_original -> monto | ? -> $1, $2, $3
+    const sqlConsultar = `
+        SELECT c.id_cuota, c.estado_pago, c.monto, s.nombre
+        FROM cuotas c
+        JOIN socios s ON c.id_socio = s.id_socio 
+        WHERE c.id_socio = $1 AND c.mes = $2 AND c.anio = $3
+    `;            
 
-        db.get(sqlConsultar, [idSocio, mes, anio], (err, cuota) => {
-            if (err) return console.error("Error al buscar cuota:", err.message);
+    db.get(sqlConsultar, [idSocio, mes, anio], (err, cuota) => {
+        if (err) return console.error("❌ Error al buscar cuota:", err.message);
+        
+        if (!cuota) {
+            return console.log(`⚠️ [Error] No existe cuota para el socio ${idSocio} en el periodo ${mes}/${anio}.`);
+        }
+
+        if (cuota.estado_pago === 'PAGADO') {
+            return console.log(`ℹ️ [Aviso] La cuota ${mes}/${anio} ya fue abonada por ${cuota.nombre}.`);
+        }
+
+        console.log(`⏳ Registrando pago de $${cuota.monto} para el socio ${idSocio}...`);
+
+        // 2. Actualizamos la cuota
+        const sqlUpdate = `UPDATE cuotas SET estado_pago = 'PAGADO' WHERE id_cuota = $1`;
+        
+        db.run(sqlUpdate, [cuota.id_cuota], (err) => {
+            if (err) return console.error("❌ Error al actualizar cuota:", err.message);
+
+            // 3. Insertamos el registro en la tabla de PAGOS (con RETURNING para el ID)
+            // CAMBIO: monto_abonado -> monto_pagado | CURRENT_TIMESTAMP es nativo de Postgres
+            const sqlHistorial = `
+                INSERT INTO pagos (id_cuota, monto_pagado, metodo_pago, fecha_pago) 
+                VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+                RETURNING id_pago
+            `;
             
-            if (!cuota) {
-                return console.log(`[Error] No existe una cuota generada para el socio ${idSocio} en el periodo ${mes}/${anio}.`);
-            }
-
-            if (cuota.estado_pago === 'PAGADO') {
-                return console.log(`[Aviso] La cuota ${mes}/${anio} ya fue abonada anteriormente por el socio ${idSocio}.`);
-            }
-
-            // 2. Si está pendiente, procedemos a actualizar
-            console.log(`Registrando pago de $${cuota.monto_original} para el socio ${idSocio}...`);
-
-            // Iniciamos una pequeña "transacción" manual
-            db.run(`UPDATE cuotas SET estado_pago = 'PAGADO' WHERE id_cuota = ?`, [cuota.id_cuota], (err) => {
-                if (err) return console.error("Error al actualizar cuota:", err.message);
-
-                // 3. Insertamos el registro en la tabla de PAGOS para el historial
-                const sqlHistorial = `INSERT INTO pagos (id_cuota, monto_abonado, metodo_pago, fecha_pago) 
-                                      VALUES (?, ?, ?, CURRENT_TIMESTAMP)`;
+            // Usamos db.query para capturar el RETURNING en Postgres
+            db.query(sqlHistorial, [cuota.id_cuota, cuota.monto, metodoPago], (err, res) => {
+                if (err) return console.error("❌ Error en historial:", err.message);
                 
-                db.run(sqlHistorial, [cuota.id_cuota, cuota.monto_original, metodoPago], function(err) {
-                    if (err) return console.error("Error en historial:", err.message);
-                    
-                    console.log("-------------------------------------------");
-                    console.log("¡PAGO REGISTRADO CON ÉXITO!");
-                    console.log(`Comprobante Nº: ${this.lastID}`);
-                    console.log(`Socio ID: ${idSocio} | Periodo: ${mes}/${anio}`);
-                    console.log("-------------------------------------------");
-                });
+                const idPagoGenerado = res.rows[0].id_pago;
+
+                console.log("-------------------------------------------");
+                console.log("¡PAGO REGISTRADO CON ÉXITO EN SUPABASE!");
+                console.log(`Nº Operación: ${idPagoGenerado}`);
+                console.log(`Socio: ${cuota.nombre} | Periodo: ${mes}/${anio}`);
+                console.log(`Monto: $${cuota.monto} | Método: ${metodoPago}`);
+                console.log("-------------------------------------------");
             });
         });
     });
 }
 
-// EJEMPLO: Lucas (ID 1) paga su cuota de Marzo 2026 por Transferencia
-procesarPagoSocio(5, 3, 2026, 'Transferencia Bancaria');
+// EJEMPLO DE USO:
+// procesarPagoSocio(1, 3, 2026, 'Efectivo');
+
+module.exports = { procesarPagoSocio };
