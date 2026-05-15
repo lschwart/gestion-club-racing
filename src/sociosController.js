@@ -99,8 +99,24 @@ const crearSocio = (datos, callback) => {
     });
 };
 
+// Función para el Dashboard de la web (Estadísticas)
+const obtenerEstadisticas = (callback) => {
+    const sql = `
+        SELECT 
+            (SELECT COUNT(*) FROM socios WHERE estado = 'Activo') as total_socios,
+            (SELECT COALESCE(SUM(monto), 0) FROM cuotas WHERE estado_pago = 'PENDIENTE') as deuda_total,
+            (SELECT COUNT(*) FROM socios WHERE id_categoria = (SELECT id_categoria FROM categorias WHERE nombre_categoria = 'Socio Pleno' LIMIT 1)) as socios_plenos
+    `;
+    
+    db.get(sql, [], (err, fila) => {
+        if (err) return callback(err);
+        callback(null, fila);
+    });
+};
+
 module.exports = {
     listarConResumen,
     buscarSocioConDeudas,
-    crearSocio
+    crearSocio,
+    obtenerEstadisticas
 };
