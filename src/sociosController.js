@@ -58,14 +58,12 @@ const buscarSocioConDeudas = (id, callback) => {
 const crearSocio = (datos, callback) => {
     const { nombre, apellido, dni, id_categoria, fecha_nacimiento } = datos;
 
-    // CAMBIOS: Usamos RETURNING para obtener el ID en Postgres
     const sqlSocio = `
         INSERT INTO socios (nombre, apellido, dni, id_categoria, fecha_nacimiento, estado) 
         VALUES ($1, $2, $3, $4, $5, 'Activo') 
         RETURNING id_socio
     `;
 
-    // Usamos db.query directamente para aprovechar el RETURNING
     db.query(sqlSocio, [nombre, apellido, dni, id_categoria, fecha_nacimiento], (err, res) => {
         if (err) {
             console.error("ERROR AL CREAR SOCIO:", err.message);
@@ -74,26 +72,32 @@ const crearSocio = (datos, callback) => {
 
         const idSocioNuevo = res.rows[0].id_socio;
 
-        // 2. Buscamos el monto de la categoría
+        // Buscamos el monto de la categoría
         const sqlMonto = "SELECT costo_mensual FROM categorias WHERE id_categoria = $1";
-        db.get(sqlMonto, [id_categoria], (err, categoria) => {
+        
+        // Usamos db.query aquí también para ser consistentes con Postgres
+        db.query(sqlMonto, [id_categoria], (err, resCat) => {
             if (err) return callback(err);
 
+            const categoria = resCat.rows[0];
             const fechaActual = new Date();
             const mesActual = fechaActual.getMonth() + 1;
             const anioActual = fechaActual.getFullYear();
             
-            // CAMBIOS: monto_original -> monto
             const sqlCuota = `
                 INSERT INTO cuotas (id_socio, mes, anio, monto, estado_pago) 
                 VALUES ($1, $2, $3, $4, 'PENDIENTE')
             `;
 
-            db.run(sqlCuota, [idSocioNuevo, mesActual, anioActual, categoria.costo_mensual], (err) => {
-                if (err) return callback(err);
+            // CAMBIO CLAVE: Usamos db.query en lugar de db.run para evitar que se cuelgue
+            db.query(sqlCuota, [idSocioNuevo, mesActual, anioActual, categoria.costo_mensual], (err) => {
+                if (err) {
+                    console.error("ERROR AL CREAR CUOTA:", err.message);
+                    return callback(err);
+                }
                 
                 console.log(`✅ Socio creado exitosamente: ID ${idSocioNuevo}`);
-                callback(null, idSocioNuevo);
+                callback(null, idSocioNuevo); // Aquí es donde le avisamos a la web que terminó
             });
         });
     });
