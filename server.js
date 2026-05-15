@@ -9,7 +9,7 @@ const sociosCtrl = require('./src/sociosController');
 const pagosCtrl = require('./src/pagosController'); 
 
 // Tareas programadas (Cron)
-//require('./src/tareasProgramadas');
+require('./src/tareasProgramadas');
 
 // Configuración
 app.set('view engine', 'ejs');
