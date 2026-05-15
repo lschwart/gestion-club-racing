@@ -114,9 +114,29 @@ const obtenerEstadisticas = (callback) => {
     });
 };
 
+// Función para obtener las categorías (necesaria para los formularios)
+const obtenerCategorias = (callback) => {
+    const sql = "SELECT * FROM categorias ORDER BY nombre_categoria ASC";
+    db.all(sql, [], (err, filas) => {
+        if (err) return callback(err);
+        callback(null, filas);
+    });
+};
+
+// Función para obtener un socio por ID (sin deudas, solo datos básicos)
+const obtenerSocioPorId = (id, callback) => {
+    const sql = "SELECT * FROM socios WHERE id_socio = $1";
+    db.get(sql, [id], (err, fila) => {
+        if (err) return callback(err);
+        callback(null, fila);
+    });
+};
+
 module.exports = {
     listarConResumen,
     buscarSocioConDeudas,
     crearSocio,
-    obtenerEstadisticas
+    obtenerEstadisticas,
+    obtenerCategorias,
+    obtenerSocioPorId
 };
