@@ -58,6 +58,7 @@ const buscarSocioConDeudas = (id, callback) => {
 const crearSocio = (datos, callback) => {
     const { nombre, apellido, dni, id_categoria, fecha_nacimiento } = datos;
 
+    // 1. Insertamos el socio
     const sqlSocio = `
         INSERT INTO socios (nombre, apellido, dni, id_categoria, fecha_nacimiento, estado) 
         VALUES ($1, $2, $3, $4, $5, 'Activo') 
@@ -66,38 +67,45 @@ const crearSocio = (datos, callback) => {
 
     db.query(sqlSocio, [nombre, apellido, dni, id_categoria, fecha_nacimiento], (err, res) => {
         if (err) {
-            console.error("ERROR AL CREAR SOCIO:", err.message);
+            console.error("❌ ERROR AL CREAR SOCIO:", err.message);
             return callback(err);
         }
 
         const idSocioNuevo = res.rows[0].id_socio;
 
-        // Buscamos el monto de la categoría
+        // 2. Buscamos el monto de la categoría para asignarle a la cuota
         const sqlMonto = "SELECT costo_mensual FROM categorias WHERE id_categoria = $1";
         
-        // Usamos db.query aquí también para ser consistentes con Postgres
         db.query(sqlMonto, [id_categoria], (err, resCat) => {
-            if (err) return callback(err);
+            if (err || !resCat.rows[0]) {
+                console.error("❌ ERROR AL BUSCAR CATEGORÍA:", err ? err.message : "No encontrada");
+                // Si falla la categoría, igual avisamos que el socio se creó
+                return callback(null, idSocioNuevo); 
+            }
 
-            const categoria = resCat.rows[0];
+            const montoCategoria = resCat.rows[0].costo_mensual;
             const fechaActual = new Date();
             const mesActual = fechaActual.getMonth() + 1;
             const anioActual = fechaActual.getFullYear();
             
+            // 3. Insertamos la cuota inicial como 'PENDIENTE'
+            // IMPORTANTE: Aquí forzamos que diga PENDIENTE
             const sqlCuota = `
                 INSERT INTO cuotas (id_socio, mes, anio, monto, estado_pago) 
                 VALUES ($1, $2, $3, $4, 'PENDIENTE')
             `;
 
-            // CAMBIO CLAVE: Usamos db.query en lugar de db.run para evitar que se cuelgue
-            db.query(sqlCuota, [idSocioNuevo, mesActual, anioActual, categoria.costo_mensual], (err) => {
+            db.query(sqlCuota, [idSocioNuevo, mesActual, anioActual, montoCategoria], (err) => {
                 if (err) {
-                    console.error("ERROR AL CREAR CUOTA:", err.message);
-                    return callback(err);
+                    console.error("❌ ERROR AL CREAR CUOTA INICIAL:", err.message);
+                    // Si falla la cuota, igual devolvemos el socio para que no se cuelgue la web
+                    return callback(null, idSocioNuevo);
                 }
                 
-                console.log(`✅ Socio creado exitosamente: ID ${idSocioNuevo}`);
-                callback(null, idSocioNuevo); // Aquí es donde le avisamos a la web que terminó
+                console.log(`✅ Socio ${idSocioNuevo} creado con cuota ${mesActual}/${anioActual} PENDIENTE.`);
+                
+                // ESTE ES EL AVISO PARA QUE LA WEB DEJE DE GIRAR
+                callback(null, idSocioNuevo); 
             });
         });
     });
