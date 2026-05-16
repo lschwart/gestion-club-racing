@@ -20,23 +20,28 @@ const registrarPago = (datos, callback) => {
 
 // 2. Obtener Reporte Mensual (¡AQUÍ ESTABA EL ERROR DE STRFTIME!)
 const obtenerReporteMensual = (mes, anio, callback) => {
-    // Explicación: En Postgres cambiamos strftime por TO_CHAR
+    // Usamos CAST por si la fecha quedó guardada como texto o como timestamp
     const sql = `
-        SELECT p.fecha_pago, p.monto_abonado, p.metodo_pago, s.nombre, s.apellido, c.nombre_categoria
+        SELECT 
+            p.fecha_pago, 
+            p.monto_abonado, 
+            p.metodo_pago, 
+            s.nombre, 
+            s.apellido, 
+            c.nombre_categoria
         FROM pagos p
         JOIN cuotas cu ON p.id_cuota = cu.id_cuota
         JOIN socios s ON cu.id_socio = s.id_socio
         JOIN categorias c ON s.id_categoria = c.id_categoria
-        WHERE TO_CHAR(p.fecha_pago, 'MM') = $1 
-          AND TO_CHAR(p.fecha_pago, 'YYYY') = $2
+        WHERE TO_CHAR(p.fecha_pago::TIMESTAMP, 'MM') = $1 
+          AND TO_CHAR(p.fecha_pago::TIMESTAMP, 'YYYY') = $2
         ORDER BY p.fecha_pago DESC`;
 
     db.query(sql, [mes.padStart(2, '0'), anio.toString()], (err, res) => {
         if (err) {
-            console.error("❌ Error en obtenerReporteMensual SQL:", err.message);
+            console.error("❌ ERROR CRÍTICO EN SQL DE REPORTES:", err.message);
             return callback(err);
         }
-        // Retornamos las filas encontradas
         callback(null, res.rows || []);
     });
 };
