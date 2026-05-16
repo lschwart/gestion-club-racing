@@ -64,10 +64,29 @@ const obtenerCategorias = (callback) => {
 };
 
 const obtenerEstadisticas = (callback) => {
-    const sql = `SELECT (SELECT COUNT(*) FROM socios WHERE estado = 'Activo') as total_activos, 
-                 (SELECT COALESCE(SUM(monto), 0) FROM cuotas WHERE estado_pago = 'PENDIENTE') as pendiente`;
+    // 1. Contamos socios activos
+    // 2. Sumamos monto_pagado de la tabla pagos (Recaudado Total histórico o del mes, según prefieras)
+    // 3. Sumamos lo pendiente de la tabla cuotas
+    const sql = `
+        SELECT 
+            (SELECT COUNT(*) FROM socios WHERE estado = 'Activo') as total_activos, 
+            (SELECT COALESCE(SUM(monto_pagado), 0) FROM pagos) as recaudado,
+            (SELECT COALESCE(SUM(monto), 0) FROM cuotas WHERE estado_pago = 'PENDIENTE') as pendiente`;
+            
     db.query(sql, [], (err, res) => {
-        callback(err, res ? res.rows[0] : { total_activos: 0, pendiente: 0 });
+        if (err) {
+            console.error("❌ Error en obtenerEstadisticas SQL:", err.message);
+            return callback(err);
+        }
+        // Retornamos el primer registro con formato numérico correcto
+        const stats = res.rows[0] || { total_activos: 0, recaudado: 0, pendiente: 0 };
+        
+        // Convertimos a número real para evitar textos en el render
+        stats.total_activos = parseInt(stats.total_activos);
+        stats.recaudado = parseFloat(stats.recaudado);
+        stats.pendiente = parseFloat(stats.pendiente);
+        
+        callback(null, stats);
     });
 };
 
