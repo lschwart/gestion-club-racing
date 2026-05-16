@@ -20,11 +20,11 @@ const registrarPago = (datos, callback) => {
 
 // 2. Obtener Reporte Mensual (¡AQUÍ ESTABA EL ERROR DE STRFTIME!)
 const obtenerReporteMensual = (mes, anio, callback) => {
-    // Usamos CAST por si la fecha quedó guardada como texto o como timestamp
+    // Cambiado p.monto_abonado por p.monto_pagado para que coincida con Supabase
     const sql = `
         SELECT 
             p.fecha_pago, 
-            p.monto_abonado, 
+            p.monto_pagado, 
             p.metodo_pago, 
             s.nombre, 
             s.apellido, 
