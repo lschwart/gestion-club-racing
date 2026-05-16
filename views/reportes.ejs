@@ -201,7 +201,7 @@
                             <td><strong><%= p.apellido %>, <%= p.nombre %></strong></td>
                             <td><span style="color: #666;"><%= p.nombre_categoria %></span></td>
                             <td><i class="fas fa-credit-card"></i> <%= p.metodo_pago %></td>
-                            <td style="font-weight: bold; color: var(--success);">$<%= p.monto_abonado.toLocaleString('es-AR') %></td>
+                            <td style="font-weight: bold; color: var(--success);">$<%= p.monto_pagado.toLocaleString('es-AR') %></td>
                         </tr>
                     <% }) %>
                 <% } else { %>
