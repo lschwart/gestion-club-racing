@@ -153,8 +153,7 @@ app.get('/reportes', (req, res) => {
         }
 
         // Calculamos el total sumando los montos de la lista
-        const totalMes = ingresos.reduce((sum, p) => sum + p.monto_abonado, 0);
-
+const totalMes = ingresos.reduce((sum, p) => sum + p.monto_pagado, 0);
         res.render('reportes', {
             ingresos: ingresos,
             total: totalMes,
