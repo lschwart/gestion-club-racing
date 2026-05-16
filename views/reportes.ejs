@@ -188,7 +188,16 @@
                 <% if (ingresos.length > 0) { %>
                     <% ingresos.forEach(p => { %>
                         <tr>
-                            <td><%= new Date(p.fecha_pago).toLocaleDateString('es-AR') %></td>
+                            <td>
+                                <% 
+                                    // Forzamos a que interprete la fecha sin perder horas por zona horaria
+                                    const d = new Date(p.fecha_pago);
+                                    const fechaFormateada = d.getUTCDate().toString().padStart(2, '0') + '/' + 
+                                                            (d.getUTCMonth() + 1).toString().padStart(2, '0') + '/' + 
+                                                            d.getUTCFullYear();
+                                %>
+                                <%= fechaFormateada %>
+                            </td>
                             <td><strong><%= p.apellido %>, <%= p.nombre %></strong></td>
                             <td><span style="color: #666;"><%= p.nombre_categoria %></span></td>
                             <td><i class="fas fa-credit-card"></i> <%= p.metodo_pago %></td>
