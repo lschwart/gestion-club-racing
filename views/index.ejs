@@ -84,31 +84,25 @@
         .btn-save { background: var(--success); color: white; }
         .btn-save:hover { background: #1e8449; transform: translateY(-2px); }
 
-        /* Tabla */
-        .table-container {
-            max-width: 100%;
-            overflow-x: auto;
-            background: white;
-            padding: 15px;
+/* Estilos para que la tabla sea responsiva en celulares */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto; /* Activa el scroll horizontal si no entra */
+            -webkit-overflow-scrolling: touch; /* Hace que el scroll sea suave en iPhones */
+            margin-top: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            border: 1px solid #e0e0e0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
-            word-wrap: break-word;
+            white-space: nowrap; /* Evita que los textos largos se partan en vertical */
         }
 
-        th {
-            background-color: var(--primary);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            text-transform: uppercase;
-            font-size: 14px;
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
         }
 
         td {
@@ -204,6 +198,74 @@
             display: inline-flex; align-items: center; border: 1px solid #fbcaca;
         }
         .dot-inactivo-rojo { height: 8px; width: 8px; background-color: #eb5757; border-radius: 50%; margin-right: 8px; }
+
+        /* ==========================================
+           MÓDULO RESPONSIVO PARA CELULARES Y TABLETS
+           ========================================== */
+           @media (max-width: 768px) {
+            body {
+                padding: 10px; /* Menos margen en los bordes del celular */
+            }
+
+            .container {
+                padding: 15px; /* Aprovecha mejor el ancho disponible */
+            }
+
+            /* Cabecera colapsable */
+            .header-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            .header-container h1 {
+                font-size: 1.6rem; /* Texto de título más adecuado para celular */
+            }
+
+            /* El Dashboard pasa de 4 columnas a 2 columnas (o 1 si es muy chico) */
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+                gap: 10px;
+            }
+            .stat-card-new {
+                padding: 10px;
+                gap: 8px;
+            }
+            .stat-card-new span {
+                font-size: 1.5rem; /* Iconos un poco más chicos */
+            }
+            .stat-card-new h3 {
+                font-size: 1.1rem;
+            }
+
+            /* Sección de Buscador y Botones (Reporte, Excel, PDF) */
+            div[style*="display: flex; align-items: center; gap: 10px;"] {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+            #buscadorSocios {
+                width: 100% !important;
+            }
+            .button-group {
+                grid-template-columns: 1fr; /* Botones uno abajo del otro en vertical */
+                width: 100%;
+            }
+            .btn-pill-white {
+                justify-content: center; /* Centra el texto y los iconos dentro del botón */
+                width: 100%;
+            }
+
+            /* Sección de los Botones de Filtro (Todos, Activos, Con Deuda) */
+            div[style*="display: flex; align-items: center; gap: 8px;"] {
+                flex-wrap: wrap; /* Si no entran en el ancho, bajan ordenadamente */
+                gap: 5px !important;
+            }
+            .btn-filtro, #btnCumple {
+                flex-grow: 1; /* Hacen que los filtros se expandan prolijamente */
+                text-align: center;
+                font-size: 0.8rem;
+                padding: 8px 10px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -295,8 +357,8 @@
                        style="padding: 10px 10px 10px 35px; border-radius: 50px; border: 1px solid #ccc; width: 100%; outline: none;"
                        placeholder="Buscar por Apellido o DNI...">
             </div>
-            <div class="button-group" style="display: flex; gap: 10px;">
-                    <a href="/reportes" class="btn-pill-white" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <div class="button-group" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; width: 100%;">
+                        <a href="/reportes" class="btn-pill-white" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
                         <img src="https://img.icons8.com/color/48/sales-performance.png" width="18"> 
                         <span>Reporte Mensual</span>
                     </a>
@@ -326,7 +388,7 @@
         </div>
     </div>
 
-    <div class="table-container">
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
