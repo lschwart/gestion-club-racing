@@ -156,13 +156,14 @@ app.get('/pagar/:id_socio/:id_cuota', requerirAutenticacion, (req, res) => {
 
 // 4. Alta de Nuevo Socio - PROTEGIDA
 app.post('/nuevo-socio', requerirAutenticacion, (req, res) => {
-    const { nombre, apellido, dni, fecha_nacimiento, id_categoria } = req.body;
+    const { nombre, apellido, dni, fecha_nacimiento, telefono, id_categoria } = req.body;
     
     const datosNuevoSocio = {
         nombre,
         apellido,
         dni,
         fecha_nacimiento,
+        telefono,
         id_categoria,
         estado: 'Activo'
     };
