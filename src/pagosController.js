@@ -5,7 +5,7 @@ const registrarPago = (datos, callback) => {
     const { id_cuota, monto, metodo_pago } = datos;
     const fechaHoy = new Date().toISOString().split('T')[0];
 
-    const sql1 = `INSERT INTO pagos (id_cuota, fecha_pago, monto_abonado, metodo_pago) VALUES ($1, $2, $3, $4)`;
+    const sql1 = `INSERT INTO pagos (id_cuota, fecha_pago, monto_pagado, metodo_pago) VALUES ($1, $2, $3, $4)`;
     
     db.query(sql1, [id_cuota, fechaHoy, monto, metodo_pago], (err) => {
         if (err) {
