@@ -66,42 +66,57 @@ app.get('/logout', (req, res) => {
 });
 
 
-// 1. Inicio (Dashboard + Tabla con Resumen) - PROTEGIDA
+// 1. Inicio (Dashboard + Tabla con Resumen) - CON LOGS DE CONTROL
 app.get('/', requerirAutenticacion, (req, res) => {
-    // 1. Obtenemos los socios (usando tu controlador que ya trae el resumen)
+    console.log("=== 🔍 ENTRANDO A LA RUTA PRINCIPAL ===");
+    
     sociosCtrl.listarConResumen((err, listaSocios) => {
-        if (err) return res.status(500).send("Error al listar socios");
+        if (err) {
+            console.error("❌ ERROR REAL en listarConResumen:", err);
+            return res.status(500).send("Error al listar socios");
+        }
+        
+        console.log("✅ Socios traídos con éxito. Cantidad:", listaSocios.length);
 
-        // 2. Obtenemos las estadísticas
         sociosCtrl.obtenerEstadisticas((err, stats) => {
-            const datosStats = stats || { total_activos: 0, recaudado: 0, pendiente: 0 };
-   
-            //3. Lógica para contar cumpleañeros hoy
-            const hoy = new Date();
-            const diaHoy = hoy.getDate();
-            const mesHoy = hoy.getMonth() + 1;
+            if (err) {
+                console.error("❌ ERROR REAL en obtenerEstadisticas:", err);
+                return res.status(500).send("Error en estadísticas");
+            }
 
-            const cumpleañerosHoy = listaSocios.filter(s => {
-                if (!s.fecha_nacimiento) return false;
-                const f = new Date(s.fecha_nacimiento);
-                return (f.getUTCDate() === diaHoy && (f.getUTCMonth() + 1) === mesHoy);
-            });    
+            console.log("✅ Estadísticas traídas con éxito:", stats);
+            
+            try {
+                const hoy = new Date();
+                const diaHoy = hoy.getDate();
+                const mesHoy = hoy.getMonth() + 1;
 
-             // 4. Obtenemos las categorías dinámicamente desde el controlador
-            sociosCtrl.obtenerCategorias((err, listaCategorias) => {
-                if (err) {
-                    console.error("Error al traer categorías:", err);
-                    listaCategorias = [];
-                }
+                const cumpleañerosHoy = listaSocios.filter(s => {
+                    if (!s.fecha_nacimiento) return false;
+                    const f = new Date(s.fecha_nacimiento);
+                    return (f.getUTCDate() === diaHoy && (f.getUTCMonth() + 1) === mesHoy);
+                });    
 
-                // 5. Único renderizado con toda la información necesaria
-                res.render('index', { 
-                    socios: listaSocios, 
-                    categorias: listaCategorias, 
-                    stats: datosStats,
-                    cumpleHoy: cumpleañerosHoy.length
+                console.log("✅ Lógica de cumpleaños completada sin trabas");
+
+                sociosCtrl.obtenerCategorias((err, listaCategorias) => {
+                    if (err) {
+                        console.error("❌ ERROR REAL al traer categorías:", err);
+                        listaCategorias = [];
+                    }
+
+                    console.log("🚀 Renderizando la vista index con todos los datos");
+                    res.render('index', { 
+                        socios: listaSocios, 
+                        categorias: listaCategorias, 
+                        stats: stats,
+                        cumpleHoy: cumpleañerosHoy.length
+                    });
                 });
-            });
+            } catch (errorLogico) {
+                console.error("❌ EL CÓDIGO JAVASCRIPT EXPLOTÓ EN EL FILTRO:", errorLogico);
+                res.status(500).send("Error interno del servidor en JS");
+            }
         });
     });
 });
