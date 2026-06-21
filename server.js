@@ -168,9 +168,10 @@ app.post('/nuevo-socio', requerirAutenticacion, (req, res) => {
         estado: 'Activo'
     };
 
-    sociosCtrl.crearSocio(datosNuevoSocio, (err) => {
+// 3. Se lo mandamos a la función que modificamos recién
+    sociosCtrl.crearSocio(datosNuevos, (err, idSocioNuevo) => {
         if (err) {
-            console.error("Error al insertar socio:", err.message);
+            console.error("❌ ERROR REAL al insertar en la DB:", err); // <-- Metemos este log por las dudas
             return res.status(500).send("Error al insertar el socio.");
         }
         res.redirect('/');
