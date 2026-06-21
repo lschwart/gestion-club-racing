@@ -30,11 +30,16 @@ const buscarSocioCompleto = (id, callback) => {
 };
 
 // 3. CREAR SOCIO
+// 3. CREAR SOCIO (CON CAMPO TELÉFONO INTEGRADO)
 const crearSocio = (datos, callback) => {
-    const { nombre, apellido, dni, id_categoria, fecha_nacimiento } = datos;
-    const sqlSocio = `INSERT INTO socios (nombre, apellido, dni, id_categoria, fecha_nacimiento, estado) VALUES ($1, $2, $3, $4, $5, 'Activo') RETURNING id_socio`;
+    // 1. Agregamos "telefono" a los datos que extraemos del formulario
+    const { nombre, apellido, dni, id_categoria, fecha_nacimiento, telefono } = datos;
     
-    db.query(sqlSocio, [nombre, apellido, dni, id_categoria, fecha_nacimiento], (err, res) => {
+    // 2. Modificamos el INSERT para incluir la columna telefono y el parámetro $6
+    const sqlSocio = `INSERT INTO socios (nombre, apellido, dni, id_categoria, fecha_nacimiento, telefono, estado) VALUES ($1, $2, $3, $4, $5, $6, 'Activo') RETURNING id_socio`;
+    
+    // 3. Sumamos "telefono" al final del arreglo de valores correspondientes al $6
+    db.query(sqlSocio, [nombre, apellido, dni, id_categoria, fecha_nacimiento, telefono], (err, res) => {
         if (err) return callback(err);
         const idSocioNuevo = res.rows[0].id_socio;
 

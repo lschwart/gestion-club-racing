@@ -71,7 +71,7 @@
             %>
                 <p style="margin: 5px 0;">📅 <strong>Nacimiento:</strong> <%= f.getUTCDate() %>/<%= f.getUTCMonth()+1 %>/<%= f.getUTCFullYear() %> (<%= edad %> años)</p>
             <% } %>
-
+                <p class="mb-2">📞 <strong>Teléfono:</strong> <%= socio.telefono ? socio.telefono : 'No registrado' %></p>
             <span class="badge <%= socio.estado === 'Activo' ? 'status-activo' : 'status-inactivo' %>">
                 <%= socio.estado %>
             </span>
